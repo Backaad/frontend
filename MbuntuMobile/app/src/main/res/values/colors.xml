@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="mbuntu_primary">#FF4400</color> <!-- Orange Mbuntu -->
+    <color name="mbuntu_primary_dark">#CC3600</color>
+    <color name="mbuntu_secondary">#282828</color> <!-- Noir Mbuntu -->
+    <color name="mbuntu_white">#FFFFFF</color>
+    <color name="mbuntu_light_gray">#F5F5F5</color>
+    <color name="mbuntu_text_primary">#282828</color>
+    <color name="mbuntu_text_secondary">#757575</color>
+</resources>

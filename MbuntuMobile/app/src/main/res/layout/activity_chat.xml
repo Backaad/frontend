@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/mbuntu_white"
+    tools:context=".ChatActivity">
+
+    <!-- Barre d'outils en haut -->
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbarChat"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/mbuntu_primary"
+        app:titleTextColor="@color/mbuntu_white"
+        app:subtitleTextColor="@color/mbuntu_white"
+        app:navigationIcon="@drawable/ic_arrow_back"
+        app:navigationIconTint="@color/mbuntu_white"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:title="Nom de la Conversation"
+        tools:subtitle="En ligne" />
+
+    <!-- Liste des messages -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewMessages"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingVertical="8dp"
+        app:stackFromEnd="true"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        app:layout_constraintTop_toBottomOf="@id/toolbarChat"
+        app:layout_constraintBottom_toTopOf="@+id/cardViewInput"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:listitem="@layout/item_message_sent" />
+
+    <!-- Zone de saisie stylisée dans une carte -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardViewInput"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:cardBackgroundColor="@color/mbuntu_white"
+        app:cardElevation="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="4dp">
+
+            <!-- Bouton pour attacher un fichier -->
+            <ImageButton
+                android:id="@+id/buttonAttach"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_attach_file_48px"
+                app:tint="@color/mbuntu_secondary" />
+
+            <!-- Champ de saisie -->
+            <EditText
+                android:id="@+id/editTextMessage"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@android:color/transparent"
+                android:hint="Votre message..."
+                android:inputType="textMultiLine|textCapSentences"
+                android:maxLines="5"
+                android:paddingHorizontal="12dp"
+                android:textColor="@color/mbuntu_text_primary" />
+
+            <!-- NOUVEAU : Bouton d'envoi flottant (oiseau) -->
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/buttonSend"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_send"
+                app:backgroundTint="@color/mbuntu_primary"
+                app:tint="@color/mbuntu_white"
+                app:elevation="2dp"
+                app:fabSize="mini" />
+
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="TextLink" parent="TextAppearance.AppCompat">
+        <item name="android:textColor">@color/mbuntu_primary</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+</resources>

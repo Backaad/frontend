@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_bottom_chats"
+        android:icon="@android:drawable/ic_dialog_email"
+        android:title="Discussions" />
+    <item
+        android:id="@+id/nav_bottom_status"
+        android:icon="@android:drawable/ic_menu_gallery"
+        android:title="Statut" />
+    <item
+        android:id="@+id/nav_bottom_tara"
+        android:icon="@android:drawable/btn_plus"
+        android:title="Tara"/>
+    <item
+        android:id="@+id/nav_bottom_calls"
+        android:icon="@android:drawable/ic_menu_call"
+        android:title="Appels" />
+
+</menu>

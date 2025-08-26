@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingVertical="4dp"
+    android:paddingHorizontal="8dp">
+
+    <!--
+        La "bulle" du message. C'est un TextView stylisé avec un fond.
+        Elle est contrainte à la FIN (droite) du parent.
+    -->
+    <TextView
+        android:id="@+id/textViewMessageContent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/background_message_sent"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="12dp"
+        android:textColor="@color/mbuntu_white"
+        android:maxWidth="280dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="Ceci est un exemple de message envoyé qui peut être assez long pour prendre plusieurs lignes." />
+
+    <!--
+        L'heure du message.
+        Elle est contrainte en dessous et à la fin (droite) de la bulle de message.
+    -->
+    <TextView
+        android:id="@+id/textViewMessageTimestamp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textSize="10sp"
+        android:textColor="@color/mbuntu_text_secondary"
+        app:layout_constraintEnd_toEndOf="@+id/textViewMessageContent"
+        app:layout_constraintTop_toBottomOf="@+id/textViewMessageContent"
+        tools:text="14:32" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

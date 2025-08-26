@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingVertical="4dp"
+    android:paddingHorizontal="8dp">
+
+    <!-- L'avatar de l'expéditeur (optionnel mais recommandé pour les groupes) -->
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/imageViewSenderAvatar"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:src="@mipmap/ic_launcher_round"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!--
+        La bulle du message.
+        Elle est contrainte au DÉBUT (gauche) du parent, juste à côté de l'avatar.
+    -->
+    <TextView
+        android:id="@+id/textViewMessageContent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:background="@drawable/background_message_received"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="12dp"
+        android:textColor="@color/mbuntu_text_primary"
+        android:maxWidth="280dp"
+        app:layout_constraintStart_toEndOf="@+id/imageViewSenderAvatar"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="Ceci est un exemple de message reçu d'un autre utilisateur." />
+
+    <!--
+        L'heure du message.
+        Elle est contrainte en dessous et au début (gauche) de la bulle de message.
+    -->
+    <TextView
+        android:id="@+id/textViewMessageTimestamp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textSize="10sp"
+        android:textColor="@color/mbuntu_text_secondary"
+        app:layout_constraintStart_toStartOf="@+id/textViewMessageContent"
+        app:layout_constraintTop_toBottomOf="@+id/textViewMessageContent"
+        tools:text="14:35" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
