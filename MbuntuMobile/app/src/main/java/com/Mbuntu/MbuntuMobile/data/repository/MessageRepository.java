@@ -41,25 +41,17 @@ public class MessageRepository {
         this.executorService = Executors.newSingleThreadExecutor();
     }
 
-    /**
-     * Retourne les messages d'une conversation sous forme de LiveData.
-     * Lance une synchronisation en arrière-plan pour récupérer les dernières mises à jour.
-     */
     public LiveData<List<MessageEntity>> getMessagesForConversation(long conversationId) {
         refreshMessages(conversationId);
         return messageDao.getMessagesForConversation(conversationId);
     }
 
-    /**
-     * Contacte l'API pour récupérer l'historique des messages et met à jour la base de données locale.
-     */
     private void refreshMessages(long conversationId) {
         String token = "Bearer " + tokenManager.getToken();
         apiService.getMessagesForConversation(token, conversationId).enqueue(new Callback<List<MessageResponse>>() {
             @Override
             public void onResponse(@NonNull Call<List<MessageResponse>> call, @NonNull Response<List<MessageResponse>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    Log.d(TAG, "Synchronisation réussie: " + response.body().size() + " messages reçus du serveur.");
                     executorService.execute(() -> {
                         List<MessageEntity> messageEntities = response.body().stream()
                                 .map(MessageRepository::mapResponseToEntity)
@@ -68,7 +60,6 @@ public class MessageRepository {
                     });
                 }
             }
-
             @Override
             public void onFailure(@NonNull Call<List<MessageResponse>> call, @NonNull Throwable t) {
                 Log.e(TAG, "Échec de la synchronisation des messages", t);
@@ -76,9 +67,6 @@ public class MessageRepository {
         });
     }
 
-    /**
-     * Gère l'envoi d'un nouveau message en utilisant une approche "optimiste".
-     */
     public void sendMessage(long conversationId, String content) {
         long currentUserId = tokenManager.getUserId();
         String currentUsername = tokenManager.getUsername();
@@ -91,47 +79,66 @@ public class MessageRepository {
         sendingMessage.timestamp = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
         sendingMessage.status = MessageEntity.STATUS_SENDING;
 
-        // On insère le message "en attente" dans la DB locale, ce qui met à jour l'UI.
         executorService.execute(() -> {
-            // Note: Pour une version avancée, cette méthode 'insert' devrait retourner le 'localId'
-            // pour pouvoir mettre à jour le bon message plus tard de manière garantie.
-            messageDao.insertOrUpdateMessage(sendingMessage);
-        });
-
-        String token = "Bearer " + tokenManager.getToken();
-        SendMessageRequest request = new SendMessageRequest(conversationId, content);
-
-        apiService.sendMessage(token, request).enqueue(new Callback<MessageResponse>() {
-            @Override
-            public void onResponse(@NonNull Call<MessageResponse> call, @NonNull Response<MessageResponse> response) {
+            long localId = messageDao.insertOrUpdateMessage(sendingMessage);
+            String token = "Bearer " + tokenManager.getToken();
+            SendMessageRequest request = new SendMessageRequest(conversationId, content);
+            try {
+                Response<MessageResponse> response = apiService.sendMessage(token, request).execute();
                 if (response.isSuccessful() && response.body() != null) {
-                    // SUCCÈS : On met à jour le statut du message en "SENT".
-                    // L'idéal serait de retrouver le message par un ID unique temporaire et de le mettre à jour.
-                    // Pour l'instant, on se contente de savoir que ça a réussi.
-                    Log.d(TAG, "Message envoyé avec succès et confirmé par le serveur.");
-                    // On pourrait mettre à jour le statut ici si on avait l'ID local.
+                    MessageEntity sentMessage = mapResponseToEntity(response.body());
+                    sentMessage.localId = localId;
+                    sentMessage.status = MessageEntity.STATUS_SENT;
+                    messageDao.insertOrUpdateMessage(sentMessage);
                 } else {
-                    // ÉCHEC Côté Serveur
                     Log.e(TAG, "Échec de l'envoi du message, code: " + response.code());
+                    sendingMessage.localId = localId;
                     sendingMessage.status = MessageEntity.STATUS_FAILED;
-                    executorService.execute(() -> messageDao.insertOrUpdateMessage(sendingMessage));
+                    messageDao.insertOrUpdateMessage(sendingMessage);
                 }
-            }
-
-            @Override
-            public void onFailure(@NonNull Call<MessageResponse> call, @NonNull Throwable t) {
-                // ÉCHEC Côté Réseau
-                Log.e(TAG, "Échec de l'envoi du message (réseau)", t);
+            } catch (Exception e) {
+                Log.e(TAG, "Échec de l'envoi du message (réseau)", e);
+                sendingMessage.localId = localId;
                 sendingMessage.status = MessageEntity.STATUS_FAILED;
-                executorService.execute(() -> messageDao.insertOrUpdateMessage(sendingMessage));
+                messageDao.insertOrUpdateMessage(sendingMessage);
             }
         });
     }
 
-    /**
-     * Insère un message reçu depuis le WebSocket dans la base de données locale.
-     * @param messageResponse Le message tel que reçu du serveur.
-     */
+    // --- NOUVELLE MÉTHODE DE SUPPRESSION ---
+    public void deleteMessage(MessageEntity message) {
+        if (message.serverId == null) {
+            Log.e(TAG, "Impossible de supprimer un message qui n'a pas d'ID serveur.");
+            // Si le message n'a pas d'ID serveur (il était en cours d'envoi),
+            // on peut le supprimer localement.
+            executorService.execute(() -> messageDao.deleteMessage(message));
+            return;
+        }
+
+        // 1. UI Optimiste : Suppression immédiate de la base de données locale.
+        executorService.execute(() -> messageDao.deleteMessage(message));
+
+        // 2. Appel au serveur en arrière-plan pour la suppression réelle.
+        String token = "Bearer " + tokenManager.getToken();
+        apiService.deleteMessage(token, message.serverId).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(@NonNull Call<Void> call, @NonNull Response<Void> response) {
+                if (response.isSuccessful()) {
+                    Log.d(TAG, "Message " + message.serverId + " supprimé avec succès sur le serveur.");
+                } else {
+                    Log.e(TAG, "Échec de la suppression sur le serveur pour le message " + message.serverId);
+                    // Dans une vraie app, il faudrait gérer ce cas, par exemple en ré-insérant le message
+                    // dans la base locale pour que l'utilisateur puisse réessayer.
+                }
+            }
+            @Override
+            public void onFailure(@NonNull Call<Void> call, @NonNull Throwable t) {
+                Log.e(TAG, "Échec réseau lors de la suppression du message " + message.serverId, t);
+                // Gérer l'échec réseau.
+            }
+        });
+    }
+
     public void insertMessageFromWebSocket(MessageResponse messageResponse) {
         executorService.execute(() -> {
             MessageEntity entity = mapResponseToEntity(messageResponse);
@@ -140,10 +147,6 @@ public class MessageRepository {
         });
     }
 
-    /**
-     * Méthode utilitaire statique pour convertir un DTO réseau (MessageResponse)
-     * en une entité de base de données locale (MessageEntity).
-     */
     public static MessageEntity mapResponseToEntity(MessageResponse response) {
         MessageEntity entity = new MessageEntity();
         entity.serverId = response.getId();
@@ -154,7 +157,6 @@ public class MessageRepository {
         if (response.getTimestamp() != null) {
             entity.timestamp = response.getTimestamp().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
         }
-        // Par défaut, un message mappé depuis une réponse serveur est considéré comme "envoyé".
         entity.status = MessageEntity.STATUS_SENT;
         return entity;
     }

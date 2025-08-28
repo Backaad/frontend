@@ -5,6 +5,7 @@ import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
+import androidx.room.Delete;
 
 import java.util.List;
 
@@ -17,11 +18,13 @@ public interface MessageDao {
 
     // Insère un nouveau message. Si un message avec le même ID existe, il le remplace.
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    void insertOrUpdateMessage(MessageEntity message);
+    long insertOrUpdateMessage(MessageEntity message);
 
     // Insère une liste de messages (utile pour la synchronisation).
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertAll(List<MessageEntity> messages);
+    @Delete
+    void deleteMessage(MessageEntity message);
 
     // Récupère tous les messages d'une conversation, triés par date.
     // Le retour est un LiveData, ce qui signifie que l'UI sera notifiée

@@ -15,6 +15,20 @@
         app:navigationIcon="@android:drawable/ic_menu_close_clear_cancel"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- NOUVEAU : Champ pour le nom du groupe, initialement caché -->
+    <EditText
+        android:id="@+id/editTextGroupName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="8dp"
+        android:hint="Nom du groupe..."
+        android:visibility="gone"
+        tools:visibility="visible"
+        app:layout_constraintTop_toBottomOf="@id/toolbarNewConv"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <!-- Barre de recherche -->
     <EditText
         android:id="@+id/editTextSearch"
@@ -23,7 +37,7 @@
         android:layout_margin="16dp"
         android:hint="Rechercher par nom..."
         android:inputType="text"
-        app:layout_constraintTop_toBottomOf="@id/toolbarNewConv"
+        app:layout_constraintTop_toBottomOf="@id/editTextGroupName"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
@@ -45,9 +59,22 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/editTextSearch"
+        app:layout_constraintTop_toTopOf="@id/recyclerViewUsers"
+        app:layout_constraintBottom_toBottomOf="@id/recyclerViewUsers"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         tools:visibility="visible" />
+
+    <!-- NOUVEAU : Bouton flottant pour valider la création, initialement caché -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabConfirm"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:src="@android:drawable/ic_menu_send"
+        android:visibility="gone"
+        tools:visibility="visible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

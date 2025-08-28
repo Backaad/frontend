@@ -22,6 +22,7 @@ import retrofit2.http.Header;
 import retrofit2.http.Multipart;
 import retrofit2.http.POST;
 import retrofit2.http.PUT;
+import retrofit2.http.DELETE;
 import retrofit2.http.Part;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
@@ -53,6 +54,12 @@ public interface ApiService {
 
     @POST("api/v1/messages")
     Call<MessageResponse> sendMessage(@Header("Authorization") String token, @Body SendMessageRequest request);
+
+    @DELETE("api/v1/messages/{messageId}")
+    Call<Void> deleteMessage(
+            @Header("Authorization") String token,
+            @Path("messageId") long messageId
+    );
 
     // --- USERS / PROFILE ---
     @GET("api/v1/users/me")

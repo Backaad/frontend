@@ -1,5 +1,6 @@
 package com.Mbuntu.MbuntuMobile.ui.users;
 
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,17 +14,19 @@ import com.Mbuntu.MbuntuMobile.api.models.UserProfileResponse;
 import com.bumptech.glide.Glide;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder> {
 
     private List<UserProfileResponse> users = new ArrayList<>();
+    private final Set<Long> selectedUserIds = new HashSet<>(); // Pour stocker les sélections
     private final OnUserClickListener listener;
 
-    // On utilise une interface pour gérer les clics de manière propre,
-    // l'activité implémentera cette interface.
+    // L'interface de communication change pour renvoyer le nombre d'utilisateurs sélectionnés
     public interface OnUserClickListener {
-        void onUserClick(UserProfileResponse user);
+        void onUserClick(UserProfileResponse user, int totalSelected);
     }
 
     public UserAdapter(OnUserClickListener listener) {
@@ -32,7 +35,13 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
 
     public void setUsers(List<UserProfileResponse> users) {
         this.users = users;
+        this.selectedUserIds.clear(); // On vide la sélection quand la liste change
         notifyDataSetChanged();
+    }
+
+    // Méthode pour que l'activité puisse récupérer la liste des IDs
+    public List<Long> getSelectedUserIds() {
+        return new ArrayList<>(selectedUserIds);
     }
 
     @NonNull
@@ -46,7 +55,8 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
     @Override
     public void onBindViewHolder(@NonNull UserViewHolder holder, int position) {
         UserProfileResponse user = users.get(position);
-        holder.bind(user, listener);
+        boolean isSelected = selectedUserIds.contains(user.getId());
+        holder.bind(user, isSelected, listener);
     }
 
     @Override
@@ -55,30 +65,44 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
     }
 
 
-    // ViewHolder pour un seul utilisateur dans la liste
-    static class UserViewHolder extends RecyclerView.ViewHolder {
+    // Le ViewHolder est maintenant conscient de l'état de sélection
+    class UserViewHolder extends RecyclerView.ViewHolder {
         ImageView imageViewAvatar;
         TextView textViewUsername;
+        View itemView;
 
         public UserViewHolder(@NonNull View itemView) {
             super(itemView);
+            this.itemView = itemView;
             imageViewAvatar = itemView.findViewById(R.id.imageViewAvatar);
             textViewUsername = itemView.findViewById(R.id.textViewUsername);
         }
 
-        public void bind(final UserProfileResponse user, final OnUserClickListener listener) {
+        public void bind(final UserProfileResponse user, boolean isSelected, final OnUserClickListener listener) {
             textViewUsername.setText(user.getUsername());
 
-            // Utiliser Glide pour charger la photo de profil
             Glide.with(itemView.getContext())
                     .load(user.getProfilePictureUrl())
-                    .placeholder(R.mipmap.ic_launcher_round) // Image par défaut
-                    .error(R.mipmap.ic_launcher_round)     // Image si l'URL est mauvaise
-                    .circleCrop() // Pour un avatar rond
+                    .placeholder(R.mipmap.ic_launcher_round)
+                    .error(R.mipmap.ic_launcher_round)
+                    .circleCrop()
                     .into(imageViewAvatar);
 
-            // Gérer le clic sur toute la ligne
-            itemView.setOnClickListener(v -> listener.onUserClick(user));
+            // On change l'apparence de la ligne si elle est sélectionnée
+            itemView.setBackgroundColor(isSelected ? Color.parseColor("#E0E0E0") : Color.TRANSPARENT);
+
+            itemView.setOnClickListener(v -> {
+                // Logique de sélection/désélection
+                if (selectedUserIds.contains(user.getId())) {
+                    selectedUserIds.remove(user.getId());
+                } else {
+                    selectedUserIds.add(user.getId());
+                }
+                // On notifie l'activité du changement
+                listener.onUserClick(user, selectedUserIds.size());
+                // On rafraîchit l'affichage de cette ligne spécifique
+                notifyItemChanged(getAdapterPosition());
+            });
         }
     }
 }

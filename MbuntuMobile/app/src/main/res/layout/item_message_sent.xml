@@ -25,6 +25,17 @@
         app:layout_constraintTop_toTopOf="parent"
         tools:text="Ceci est un exemple de message envoyé qui peut être assez long pour prendre plusieurs lignes." />
 
+    <!-- NOUVEAU : ImageView pour l'icône de statut -->
+    <ImageView
+        android:id="@+id/imageViewStatus"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:layout_marginEnd="4dp"
+        app:layout_constraintBottom_toBottomOf="@+id/textViewMessageTimestamp"
+        app:layout_constraintEnd_toStartOf="@+id/textViewMessageTimestamp"
+        app:layout_constraintTop_toTopOf="@+id/textViewMessageTimestamp"
+        tools:src="@drawable/ic_status_sending" />
+
     <!--
         L'heure du message.
         Elle est contrainte en dessous et à la fin (droite) de la bulle de message.

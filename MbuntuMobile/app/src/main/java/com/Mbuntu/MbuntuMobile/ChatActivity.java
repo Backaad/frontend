@@ -4,20 +4,23 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.Mbuntu.MbuntuMobile.data.repository.MessageRepository; // NOUVEL IMPORT
+import com.Mbuntu.MbuntuMobile.data.local.MessageEntity;
+import com.Mbuntu.MbuntuMobile.data.repository.MessageRepository;
 import com.Mbuntu.MbuntuMobile.ui.chat.MessageAdapter;
 import com.Mbuntu.MbuntuMobile.utils.TokenManager;
-import com.Mbuntu.MbuntuMobile.websocket.WebSocketManager;
 
-public class ChatActivity extends AppCompatActivity {
+// On implémente bien l'interface de l'adapter pour la suppression
+public class ChatActivity extends AppCompatActivity implements MessageAdapter.OnMessageInteractionListener {
 
     private long conversationId;
     private long currentUserId;
+    private boolean isGroupChat;
 
     private Toolbar toolbar;
     private RecyclerView recyclerViewMessages;
@@ -25,7 +28,7 @@ public class ChatActivity extends AppCompatActivity {
     private View buttonSend;
 
     private MessageAdapter messageAdapter;
-    private MessageRepository messageRepository; // NOUVEAU : Le Repository
+    private MessageRepository messageRepository;
     private TokenManager tokenManager;
 
     @Override
@@ -33,13 +36,16 @@ public class ChatActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
 
+        // Récupération des données passées par l'intent
         conversationId = getIntent().getLongExtra("CONVERSATION_ID", -1L);
         String conversationName = getIntent().getStringExtra("CONVERSATION_NAME");
+        int participantCount = getIntent().getIntExtra("PARTICIPANT_COUNT", 0);
+        isGroupChat = participantCount > 2;
 
-        // Initialisation des managers et repositories
+        // Initialisation
         tokenManager = new TokenManager(this);
         currentUserId = tokenManager.getUserId();
-        messageRepository = new MessageRepository(this); // On crée notre repository
+        messageRepository = new MessageRepository(this);
 
         // Liaison des vues
         toolbar = findViewById(R.id.toolbarChat);
@@ -59,49 +65,48 @@ public class ChatActivity extends AppCompatActivity {
             return;
         }
 
-        // On commence à observer les messages de la base de données locale
         observeMessages();
-
         buttonSend.setOnClickListener(v -> sendMessage());
     }
 
-    // La gestion du WebSocket a été déplacée dans le Repository et n'est plus nécessaire ici
-    // Les méthodes onStart, onStop, setupMessageObserver sont donc à supprimer.
-
     private void setupRecyclerView() {
-        messageAdapter = new MessageAdapter(currentUserId);
+        // On passe bien les 3 arguments requis par notre adapter final
+        messageAdapter = new MessageAdapter(currentUserId, isGroupChat, this);
+
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         layoutManager.setStackFromEnd(true);
         recyclerViewMessages.setLayoutManager(layoutManager);
         recyclerViewMessages.setAdapter(messageAdapter);
     }
 
-    // NOUVELLE FAÇON DE CHARGER LES MESSAGES
     private void observeMessages() {
-        // On demande au repository le LiveData des messages.
-        // Le repository va nous donner les données locales ET lancer une synchro réseau.
         messageRepository.getMessagesForConversation(conversationId).observe(this, messageEntities -> {
-            // Cet bloc de code sera exécuté AUTOMATIQUEMENT chaque fois
-            // que la liste des messages dans la base de données locale change.
             if (messageEntities != null) {
+                // On utilise setMessages car notre adapter final est un RecyclerView.Adapter simple
                 messageAdapter.setMessages(messageEntities);
-                recyclerViewMessages.scrollToPosition(messageAdapter.getItemCount() - 1);
+                if (messageAdapter.getItemCount() > 0) {
+                    recyclerViewMessages.scrollToPosition(messageAdapter.getItemCount() - 1);
+                }
             }
         });
     }
 
-    // NOUVELLE FAÇON D'ENVOYER UN MESSAGE
     private void sendMessage() {
         String content = editTextMessage.getText().toString().trim();
         if (content.isEmpty()) return;
 
-        // On dit simplement au repository d'envoyer le message.
-        // Le repository va gérer l'UI optimiste, la sauvegarde locale et l'appel réseau.
         messageRepository.sendMessage(conversationId, content);
-
-        // On vide le champ de texte
         editTextMessage.setText("");
     }
 
-    // L'ancienne méthode loadMessageHistory() est maintenant gérée par le Repository.
+    /**
+     * Cette méthode de l'interface est appelée par l'adapter
+     * lorsque l'utilisateur confirme la suppression d'un message.
+     */
+    @Override
+    public void onDeleteMessage(MessageEntity message) {
+        Toast.makeText(this, "Suppression...", Toast.LENGTH_SHORT).show();
+        // On délègue la logique au repository. L'UI se mettra à jour via le LiveData.
+        messageRepository.deleteMessage(message);
+    }
 }

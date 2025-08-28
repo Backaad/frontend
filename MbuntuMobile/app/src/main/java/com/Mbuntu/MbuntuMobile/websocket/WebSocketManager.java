@@ -10,6 +10,8 @@ import com.Mbuntu.MbuntuMobile.data.repository.MessageRepository;
 import com.Mbuntu.MbuntuMobile.utils.TokenManager;
 import com.google.gson.Gson;
 
+import java.util.concurrent.Executors; // Nouvel import
+
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -18,13 +20,12 @@ import okhttp3.WebSocketListener;
 
 public class WebSocketManager {
     private static final String TAG = "WebSocketManager";
-    private static final String WEBSOCKET_URL = "ws://192.168.1.175:8080/MbuntuApi-0.0.1-SNAPSHOT/ws";
+    private static final String WEBSOCKET_URL = "ws://192.18.1.175:8080/MbuntuApi-0.0.1-SNAPSHOT/ws";
 
     private static WebSocketManager instance;
     private final OkHttpClient client;
     private WebSocket webSocket;
 
-    // NOUVEAU : Le manager a besoin du Repository pour sauvegarder les messages entrants
     private MessageRepository messageRepository;
     private TokenManager tokenManager;
     private final Gson gson = new Gson();
@@ -40,13 +41,11 @@ public class WebSocketManager {
         return instance;
     }
 
-    // La méthode connect a maintenant besoin du contexte pour initialiser les managers
     public void connect(Context context, long userId) {
         if (webSocket != null) {
-            return; // Déjà connecté
+            return;
         }
 
-        // Initialisation unique des managers
         if (this.messageRepository == null) {
             this.messageRepository = new MessageRepository(context.getApplicationContext());
         }
@@ -75,9 +74,6 @@ public class WebSocketManager {
                     MessageResponse messageResponse = gson.fromJson(text, MessageResponse.class);
                     long currentUserId = tokenManager.getUserId();
 
-                    // --- LOGIQUE CRUCIALE ANTI-DOUBLON ---
-                    // On ne traite et sauvegarde le message que s'il ne vient PAS de nous.
-                    // Nos propres messages sont gérés par le flux HTTP du MessageRepository.
                     if (messageResponse != null && messageResponse.getSenderId() != currentUserId) {
                         messageRepository.insertMessageFromWebSocket(messageResponse);
                     }
@@ -86,15 +82,35 @@ public class WebSocketManager {
                 }
             }
 
+            // --- MÉTHODE onClosing COMPLÉTÉE ---
             @Override
-            public void onClosing(@NonNull WebSocket ws, int code, @NonNull String reason) { /* ... inchangé ... */ }
+            public void onClosing(@NonNull WebSocket ws, int code, @NonNull String reason) {
+                super.onClosing(ws, code, reason);
+                Log.d(TAG, "Connexion WebSocket en cours de fermeture: " + reason);
+                // Le serveur demande à fermer la connexion, on finalise de notre côté.
+                ws.close(1000, null);
+            }
 
+            // --- MÉTHODE onFailure COMPLÉTÉE ---
             @Override
-            public void onFailure(@NonNull WebSocket ws, @NonNull Throwable t, @Nullable Response response) { /* ... inchangé ... */ }
+            public void onFailure(@NonNull WebSocket ws, @NonNull Throwable t, @Nullable Response response) {
+                super.onFailure(ws, t, response);
+                Log.e(TAG, "Échec de la connexion WebSocket: ", t);
+                // On nettoie la référence pour permettre une nouvelle tentative de connexion plus tard.
+                webSocket = null;
+            }
         };
 
         client.newWebSocket(request, internalListener);
     }
 
-    public void disconnect() { /* ... inchangé ... */ }
+    // --- MÉTHODE disconnect COMPLÉTÉE ---
+    public void disconnect() {
+        if (webSocket != null) {
+            // On ferme la connexion avec un code standard (1000 = Normal Closure)
+            webSocket.close(1000, "Déconnexion manuelle de l'utilisateur");
+            webSocket = null;
+        }
+        Log.d(TAG, "Connexion WebSocket déconnectée manuellement.");
+    }
 }

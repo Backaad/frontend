@@ -12,6 +12,8 @@ androidx-security = "1.0.0"
 glide = "4.12.0"
 desugarJdkLibs = "2.0.4"
 room = "2.6.1"
+roomCommonJvm = "2.7.2"
+jedis = "5.1.0"
 
 
 [libraries]
@@ -31,6 +33,9 @@ glide-compiler = { group = "com.github.bumptech.glide", name = "compiler", versi
 desugar-jdk-libs = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "desugarJdkLibs" }
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+androidx-room-common-jvm = { group = "androidx.room", name = "room-common-jvm", version.ref = "roomCommonJvm" }
+jedis = { group = "redis.clients", name = "jedis", version.ref = "jedis" }
+
 
 
 [plugins]
